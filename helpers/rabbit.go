@@ -18,10 +18,6 @@ func InitRabbit(cfg Config) Rabbit {
 	return rb
 }
 
-func Declare() {
-
-}
-
 func (r *Rabbit) connect() {
 	conn, err := rabbitmq.Dial(r.amqpUrl)
 	if err != nil {

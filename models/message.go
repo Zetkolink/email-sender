@@ -6,10 +6,27 @@ import (
 
 // Message тело запроса на отправку email.
 type Message struct {
-	ID        uint `gorm:"primary_key"`
+	// ID идентификатор сообщения.
+	ID uint `gorm:"primary_key"`
+
+	// UniqueId уникальный ID сообщения.
+	UniqueId string `json:"unique_id"`
+
+	// CreatedAt дата создания.
 	CreatedAt time.Time
-	Sender    string  `json:"sender"`
-	To        string  `json:"to"`
-	Subject   *string `json:"subject"`
-	Message   string  `json:"message"`
+
+	// Sender отправитель.
+	Sender string `json:"sender"`
+
+	// To получатель.
+	To string `json:"to"`
+
+	// Subject тема сообщения.
+	Subject *string `json:"subject"`
+
+	// Message текст сообщения.
+	Message string `json:"message"`
+
+	// State статус доставки.
+	State string `json:"state"`
 }

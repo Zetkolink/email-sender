@@ -20,11 +20,10 @@ type Config struct {
 }
 
 type DbConfig struct {
-	User   string `yaml:"user"`
-	Pass   string `yaml:"pass"`
-	Name   string `yaml:"name"`
-	Host   string `yaml:"host"`
-	Schema string `yaml:"schema"`
+	User string `yaml:"user"`
+	Pass string `yaml:"pass"`
+	Name string `yaml:"name"`
+	Host string `yaml:"host"`
 }
 
 type SmtpConfig struct {
@@ -32,11 +31,13 @@ type SmtpConfig struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Hostname string `yaml:"hostname"`
+	Port     string `yaml:"port"`
 }
 
 type RabbitConfig struct {
-	Amqp    string `yaml:"amqp"`
-	Channel string `yaml:"channel"`
+	Amqp     string `yaml:"amqp"`
+	Queue    string `yaml:"queue"`
+	Exchange string `yaml:"exchange"`
 }
 
 func (c *Config) loadConfig() {

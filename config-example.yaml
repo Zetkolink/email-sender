@@ -1,0 +1,17 @@
+db:
+  user: ""
+  pass: ""
+  name: ""
+  host: ""
+  schema: ""
+smtp:
+  identity: ""
+  username: ""
+  password: ""
+  hostname: ""
+rb:
+  amqp: ""
+  queue: ""
+  exchange: ""
+logLevel: ""
+logFormat: ""

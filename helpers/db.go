@@ -17,12 +17,12 @@ type DbConnection struct {
 func InitDb(cfg Config) DbConnection {
 	db := DbConnection{}
 	db.dbUrl = fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", cfg.Db.Host, cfg.Db.User, cfg.Db.Name, cfg.Db.Pass)
-	db.connect()
+	db.Connect()
 
 	return db
 }
 
-func (d *DbConnection) connect() {
+func (d *DbConnection) Connect() {
 	if d.DB != nil {
 		check := d.DB.DB().Ping()
 		for check != nil {
@@ -31,16 +31,13 @@ func (d *DbConnection) connect() {
 			d.DB = nil
 			time.Sleep(5 * time.Second)
 			log.Println("Reconnecting...")
-			d.connect()
+			d.Connect()
 			check = d.DB.DB().Ping()
 		}
 	} else {
 		db, err := gorm.Open("postgres", d.dbUrl)
 		if err != nil {
 			log.Fatal(err)
-		}
-		gorm.DefaultTableNameHandler = func(dbVeiculosGorm *gorm.DB, defaultTableName string) string {
-			return d.schema + "." + defaultTableName
 		}
 		d.DB = db
 	}

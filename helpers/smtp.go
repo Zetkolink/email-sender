@@ -7,6 +7,7 @@ import (
 )
 
 type SmtpHandler struct {
+	host string
 	auth smtp.Auth
 }
 
@@ -20,10 +21,11 @@ func InitSmtp(cfg Config) *SmtpHandler {
 
 	return &SmtpHandler{
 		auth: auth,
+		host: cfg.Smtp.Hostname + ":" + cfg.Smtp.Port,
 	}
 }
 
-func (s SmtpHandler) buildBody(msg models.MessageRequest) []byte {
+func (s SmtpHandler) buildBody(msg *models.MessageRequest) []byte {
 	body := "From:" + msg.Sender + "\n" + "To:" + strings.Join(msg.To, ",") + "\n"
 	if msg.Subject != nil {
 		body += "Subject:" + *msg.Subject + "\n"
@@ -33,9 +35,9 @@ func (s SmtpHandler) buildBody(msg models.MessageRequest) []byte {
 	return []byte(body)
 }
 
-func (s SmtpHandler) SendMail(addr string, msg models.MessageRequest) error {
+func (s SmtpHandler) SendMail(msg *models.MessageRequest) error {
 	err := smtp.SendMail(
-		addr,
+		s.host,
 		s.auth,
 		msg.Sender,
 		msg.To,

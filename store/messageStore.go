@@ -68,7 +68,7 @@ func (ms MessageStore) InsertMessageRequest(ctx context.Context, message models.
 	}
 
 	for _, v := range messages {
-		v.State = StateSendSuccess
+		v.State = true
 		err := ms.insert(tx, v)
 		if err != nil {
 			ms.errorHandle(v, err)

@@ -26,6 +26,7 @@ type MessageRequest struct {
 // ConvertToMessage конвертация сообщений для хранения их в базе в соответствии первой нормальной формы.
 func (m MessageRequest) ConvertToMessage() []Message {
 	messages := make([]Message, 0, len(m.To))
+	tt := time.Now().Format(time.RFC3339)
 	for _, v := range m.To {
 		message := Message{
 			Sender:    m.Sender,
@@ -33,8 +34,8 @@ func (m MessageRequest) ConvertToMessage() []Message {
 			UniqueId:  m.UniqueId,
 			Subject:   m.Subject,
 			Message:   m.Message,
-			CreatedAt: time.Now(),
-			State:     m.State,
+			CreatedAt: tt,
+			State:     false,
 		}
 		messages = append(messages, message)
 	}

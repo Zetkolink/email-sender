@@ -1,9 +1,5 @@
 package models
 
-import (
-	"time"
-)
-
 // Message тело запроса на отправку email.
 type Message struct {
 	// ID идентификатор сообщения.
@@ -13,7 +9,7 @@ type Message struct {
 	UniqueId string `json:"unique_id"`
 
 	// CreatedAt дата создания.
-	CreatedAt time.Time
+	CreatedAt string
 
 	// Sender отправитель.
 	Sender string `json:"sender"`
@@ -28,5 +24,5 @@ type Message struct {
 	Message string `json:"message"`
 
 	// State статус доставки.
-	State string `json:"state"`
+	State bool `json:"state"`
 }

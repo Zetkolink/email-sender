@@ -6,6 +6,7 @@ import (
 	"email-sender/helpers"
 	"email-sender/models"
 	"email-sender/pkg/logger"
+	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
 
@@ -24,45 +25,58 @@ func NewMessageStore(db helpers.DbConnection, lg logger.Logger, smtp *helpers.Sm
 }
 
 func (ms MessageStore) MessageHanding(message models.MessageRequest) error {
-	ms.Infof("Message from %s received", message.Sender)
+	ms.Infof("Message UNIQUE_ID:'%s' received", message.UniqueId)
 
-	err := ms.InsertMessageRequest(context.Background(), message)
+	tx, err := ms.InsertMessageRequest(context.Background(), message)
 	if err != nil {
-		ms.Errorf("Message from %s save in db error %v", err, message.Sender)
+		ms.Errorf("Message UNIQUE_ID:'%s' prepare transaction in db error %v", err, message.UniqueId)
 		return err
 	}
 
-	ms.Infof("Message from %s saved in db", message.Sender)
+	ms.Infof("Message UNIQUE_ID:'%s' prepare transaction in db", message.UniqueId)
 
 	err = ms.smpt.SendMail(&message)
 	if err != nil {
+		tx.Rollback()
 		ms.Errorf("Message send error %v", err)
 		return err
 	}
 
-	ms.Infof("Message from %s send success", message.Sender)
-
-	message.State = StateSendSuccess
-
-	err = ms.UpdateStateMessageRequest(context.Background(), message)
+	ms.Infof("Message UNIQUE_ID:'%s' send success", message.UniqueId)
+	err = tx.Commit().Error
 	if err != nil {
-		ms.Errorf("Message status in db change error %v", err)
+		ms.Errorf("Message save in db error %v", err)
+		return err
 	}
+	ms.Infof("Message UNIQUE_ID:'%s' transaction commit success", message.UniqueId)
 
 	return nil
 }
 
-func (ms MessageStore) InsertMessageRequest(ctx context.Context, message models.MessageRequest) error {
+func (ms MessageStore) InsertMessageRequest(ctx context.Context, message models.MessageRequest) (*gorm.DB, error) {
 	messages := message.ConvertToMessage()
+
+	tx := ms.db.BeginTx(ctx, &sql.TxOptions{})
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Error; err != nil {
+		return tx, err
+	}
+
 	for _, v := range messages {
-		err := ms.insert(ctx, v)
+		v.State = StateSendSuccess
+		err := ms.insert(tx, v)
 		if err != nil {
 			ms.errorHandle(v, err)
-			return err
+			return tx, err
 		}
 
 	}
-	return nil
+	return tx, nil
 }
 
 func (ms MessageStore) errorHandle(message models.Message, err error) {
@@ -74,62 +88,9 @@ func (ms MessageStore) errorHandle(message models.Message, err error) {
 	}
 }
 
-func (ms MessageStore) UpdateStateMessageRequest(ctx context.Context, message models.MessageRequest) error {
-	messages := message.ConvertToMessage()
-	for _, v := range messages {
-		err := ms.updateState(ctx, v)
-		if err != nil {
-			ms.errorHandle(v, err)
-			return err
-		}
-
-	}
-	return nil
-}
-
-func (ms MessageStore) updateState(ctx context.Context, message models.Message) error {
-	tx := ms.db.BeginTx(ctx, &sql.TxOptions{})
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := tx.Error; err != nil {
-		return err
-	}
-
-	if err := tx.Model(&message).Updates(models.Message{State: message.State}).Where("unique_id = ?", message.UniqueId).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err := tx.Commit().Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ms MessageStore) insert(ctx context.Context, message models.Message) error {
-	tx := ms.db.BeginTx(ctx, &sql.TxOptions{})
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := tx.Error; err != nil {
-		return err
-	}
-
+func (ms MessageStore) insert(tx *gorm.DB, message models.Message) error {
 	if err := tx.Create(&message).Error; err != nil {
 		tx.Rollback()
-		return err
-	}
-
-	err := tx.Commit().Error
-	if err != nil {
 		return err
 	}
 	return nil
